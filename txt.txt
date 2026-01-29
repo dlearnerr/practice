@@ -1,0 +1,28 @@
+>>git clone <repository-url> 
+>>cd Git_PullRequests
+
+touch file1.txt
+echo "This file is created in master branch" > file1.txt
+git status
+git add file1.txt 
+git commit -m "Initial commit in master"
+
+git push origin main
+git pull origin main
+git branch feature-1 
+git checkout feature-1
+
+echo "This change is from feature-1 branch" >> file1.txt
+echo "Feature branch file" > feature.txt
+git status
+git add . 
+git commit -m "Changes done in feature-1"
+git push origin feature-1
+
+git checkout master 
+git pull origin master
+
+git log --oneline
+
+Local: git branch -d feature-1
+Remote: git push origin --delete feature-1
