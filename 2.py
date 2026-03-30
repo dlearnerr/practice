@@ -1,99 +1,44 @@
-import torch
-import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
+import torch, torch.nn as nn
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
 
-# Device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Setup
+device = "cuda" if torch.cuda.is_available() else "cpu"
+z, bs, ep = 64, 64, 2
 
-# Hyperparameters
-z_dim = 64
-lr = 0.0002
-batch_size = 64
-epochs = 2
-
-# Dataset
-transform = transforms.ToTensor()
-dataset = torchvision.datasets.MNIST(
-    root="./data",
-    transform=transform,
-    download=True
+# Data
+data = DataLoader(
+    datasets.MNIST("./data", transform=transforms.ToTensor(), download=True),
+    batch_size=bs, shuffle=True
 )
-
-loader = torch.utils.data.DataLoader(
-    dataset,
-    batch_size=batch_size,
-    shuffle=True
-)
-
-# Generator
-class Generator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.model = nn.Sequential(
-            nn.Linear(z_dim, 128),
-            nn.ReLU(),
-            nn.Linear(128, 784),
-            nn.Tanh()
-        )
-
-    def forward(self, x):
-        return self.model(x).view(-1, 1, 28, 28)
-
-# Discriminator
-class Discriminator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.model = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(784, 128),
-            nn.LeakyReLU(0.2),
-            nn.Linear(128, 1),
-            nn.Sigmoid()
-        )
-
-    def forward(self, x):
-        return self.model(x)
 
 # Models
-G = Generator().to(device)
-D = Discriminator().to(device)
+G = nn.Sequential(nn.Linear(z,128), nn.ReLU(), nn.Linear(128,784), nn.Tanh()).to(device)
+D = nn.Sequential(nn.Flatten(), nn.Linear(784,128), nn.LeakyReLU(0.2), nn.Linear(128,1), nn.Sigmoid()).to(device)
 
-# Loss and Optimizers
-criterion = nn.BCELoss()
-opt_G = torch.optim.Adam(G.parameters(), lr=lr)
-opt_D = torch.optim.Adam(D.parameters(), lr=lr)
+# Train
+loss = nn.BCELoss()
+optG = torch.optim.Adam(G.parameters(), 0.0002)
+optD = torch.optim.Adam(D.parameters(), 0.0002)
 
-# Training loop
-for epoch in range(epochs):
-    for real, _ in loader:
-        real = real.to(device)
-        batch = real.size(0)
+for e in range(ep):
+    for real,_ in data:
+        real = real.to(device); b = real.size(0)
 
-        # Train Discriminator
-        noise = torch.randn(batch, z_dim).to(device)
-        fake = G(noise)
+        z_noise = torch.randn(b, z).to(device)
+        fake = G(z_noise).view(-1,1,28,28)
 
-        loss_D = (
-            criterion(D(real), torch.ones(batch, 1).to(device)) +
-            criterion(D(fake.detach()), torch.zeros(batch, 1).to(device))
-        )
+        # Discriminator
+        lD = loss(D(real), torch.ones(b,1).to(device)) + \
+             loss(D(fake.detach()), torch.zeros(b,1).to(device))
+        optD.zero_grad(); lD.backward(); optD.step()
 
-        opt_D.zero_grad()
-        loss_D.backward()
-        opt_D.step()
+        # Generator
+        lG = loss(D(fake), torch.ones(b,1).to(device))
+        optG.zero_grad(); lG.backward(); optG.step()
 
-        # Train Generator
-        loss_G = criterion(D(fake), torch.ones(batch, 1).to(device))
+    print(f"Epoch {e+1}: D={lD.item():.3f}, G={lG.item():.3f}")
 
-        opt_G.zero_grad()
-        loss_G.backward()
-        opt_G.step()
-
-    print(f"Epoch {epoch+1}: Loss D={loss_D.item():.4f}, Loss G={loss_G.item():.4f}")
-
-# Generate sample images
-noise = torch.randn(5, z_dim).to(device)
-fake_images = G(noise)
-
-print("\nGenerated Samples Shape:", fake_images.shape)
+# Output
+imgs = G(torch.randn(5, z).to(device)).view(-1,1,28,28)
+print("Shape:", imgs.shape)
