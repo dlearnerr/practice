@@ -1,0 +1,116 @@
+from diffusers import StableDiffusionPipeline 
+import torch 
+ 
+# Load model 
+pipe = StableDiffusionPipeline.from_pretrained( 
+    "runwayml/stable-diffusion-v1-5", 
+    torch_dtype=torch.float16 
+).to("cuda")   # use "cpu" if no GPU 
+ 
+# Input prompt 
+prompt = input("Enter prompt: ") 
+ 
+# Generate image 
+image = pipe(prompt).images[0] 
+ 
+# Save and show 
+image.save("output.png") 
+image.show() 
+ 
+print("Image saved as output.png")
+
+
+from diffusers import StableDiffusionPipeline 
+import torch 
+ 
+# Load your fine-tuned model (replace with your model path or HF repo) 
+model_id = "your-username/your-finetuned-model" 
+ 
+pipe = StableDiffusionPipeline.from_pretrained( 
+    model_id, 
+    torch_dtype=torch.float16 
+).to("cuda")    
+ 
+prompt = "A high-resolution medical image of retinal disease with detailed 
+blood vessels" 
+ 
+image = pipe(prompt).images[0] 
+ 
+ 
+image.save("generated_image.png") 
+image.show() 
+ 
+print("Image generated and saved as generated_image.png")
+
+
+
+
+
+from transformers import pipeline 
+ 
+qa_pipeline = pipeline("question-answering") 
+ 
+def ask_question(context, question): 
+result = qa_pipeline(question=question, context=context) 
+return result['answer'] 
+ 
+context = """ 
+Artificial Intelligence is the simulation of human intelligence by 
+machines. 
+It includes learning, reasoning, and self-correction. 
+AI is widely used in healthcare, robotics, and smart cities. 
+""" 
+question = input("Enter your question: ") 
+answer = ask_question(context, question) 
+ 
+print("Answer:", answer) 
+
+
+
+
+
+from transformers import pipeline 
+ 
+summarizer = pipeline("summarization") 
+ 
+text = input("Enter paragraph:\n") 
+ 
+summary = summarizer(text, do_sample=False) 
+ 
+print("\nOriginal Text:\n", text) 
+print("\nSummary:\n", summary[0]['summary_text'])
+
+
+
+
+
+from transformers import pipeline 
+ 
+generator = pipeline("text-generation", model="gpt2") 
+ 
+prompt = input("Enter incomplete prompt:\n") 
+ 
+result = generator(prompt, max_length=50, num_return_sequences=1) 
+ 
+print("\nCompleted Text:\n", result[0]['generated_text'])
+
+
+
+
+
+from transformers import pipeline 
+ 
+generator = pipeline("text-generation", model="gpt2") 
+ 
+prompt = """ 
+Write a short article on 'Applications of Generative AI in Healthcare'. 
+ 
+Include: - Introduction - Key applications (diagnosis, drug discovery, medical imaging) 
+ 
+Keep it clear and around 120-150 words. 
+""" 
+ 
+result = generator(prompt, max_length=180, num_return_sequences=1) 
+ 
+print("Generated Article:\n") 
+print(result[0]['generated_text'])
