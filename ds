@@ -1,0 +1,164 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA 
+from sklearn import datasets
+
+iris= datasets.load_iris()
+X=iris.data
+Y=iris.target
+
+X= StandardScaler().fit_transform(X)
+
+cov= np.cov(X.T)
+print("Covariance matrix: \n", cov)
+
+eig_vals,eig_vecs= np.linalg.eigh(cov)
+
+idx=np.argsort(eig_vals)[::-1]
+eig_vals= eig_vals[idx]
+eig_vecs= eig_vecs[:,idx]
+
+print("Eigen Values: \n",eig_vals)
+print("Eigen vectoris: \n",eig_vecs)
+
+var= eig_vals/np.sum(eig_vals)
+print("Explained Variance ratio: ", var[:2])
+
+X_manual= X@eig_vecs[:,:2]
+X_sklearn= PCA(n_components=2).fit_transform(X)
+
+plt.figure(figsize=(10,4))
+
+plt.subplot(1,2,1)
+plt.scatter(X_manual[:,0],X_manual[:,1],c=y,cmap='viridis')
+plt.title("Manual")
+
+plt.subplot(1,2,2)
+plt.scatter(X_sklearn[:,0],X_sklearn[:,1],c=y,cmap='viridis')
+plt.title("PCA")
+plt.show()
+
+
+
+
+
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+from sklearn import datasets
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+wine=datasets.load_wine()
+X=wine.data
+y=wine.target
+
+x_train,x_test,y_train,y_test= train_test_split(X,y,test_size=0.2, random_state=42)
+
+x_train= StandardScaler().fit_transform(x_train)
+x_test= StandardScaler().fit_transform(x_test)
+
+knn= KNeighborsClassifier(n_neighbors=5)
+knn.fit(x_train,y_train)
+
+y_pred= knn.predict(x_test)
+
+print(accuracy_score(y_test,y_pred))
+print(confusion_matrix(y_test,y_pred))
+print(classification_report(y_test,y_pred))
+print(wine.target_names)
+
+
+
+
+
+import numpy as np, matplotlib.pyplot as plt
+from sklearn.datasets import load_digits
+
+A = load_digits().images[0]
+U,S,Vt = np.linalg.svd(A, False)
+
+def r(k): return U[:,:k] @ np.diag(S[:k]) @ Vt[:k,:]
+
+k = [5,20,50]
+imgs = [A] + [r(min(i,len(S))) for i in k]
+
+for i in range(4):
+    plt.subplot(2,2,i+1)
+    plt.imshow(imgs[i], cmap='gray')
+    plt.title("Original" if i==0 else f"k={min(k[i-1],len(S))}")
+    plt.axis('off')
+
+plt.show()
+
+print("Original:", A.size)
+for i in k:
+    i=min(i,len(S))
+    print(f"k={i}:", U[:,:i].size + S[:i].size + Vt[:i,:].size)
+
+
+
+
+
+
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_digits
+from sklearn.tree import DecisionTreeClassifier , plot_tree
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+data= load_digits()
+x,y= data.data, data.target
+
+x_train,x_test,y_train,y_test= train_test_split(x,y,test_size=0.2, random_state=42)
+
+model=DecisionTreeClassifier(max_depth=10, random_state=42)
+
+model.fit(x_train,y_train)
+
+y_pred= model.predict(x_test)
+print(accuracy_score(y_test,y_pred))
+print(confusion_matrix(y_test,y_pred))
+print(classification_report(y_test,y_pred))
+
+plt.figure(figsize=(20,10))
+
+plot_tree(
+    model,
+    max_depth=3,
+    fontsize=10,
+    filled=True,
+    class_names= [str(i) for i in range(10)]
+)
+plt.show()
+
+
+
+
+
+
+
+import pandas as pd
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+
+df= pd.read_csv("diabetes.csv")
+
+cols=['Glucose','BloodPressure','SkinThickness','Insulin','BMI']
+df[cols]= df[cols].replace(0,pd.NA)
+df[cols]= df[cols].fillna(df[cols].median())
+
+x=df.iloc[:,:-1]
+y=df.iloc[:,-1]
+
+x_train,x_test,y_train,y_test= train_test_split(x,y,test_size=0.2, random_state=42)
+model= RandomForestClassifier(random_state=42)
+model.fit(x_train,y_train)
+
+y_pred=model.predict(x_test)
+
+print(accuracy_score(y_test,y_pred))
+print(confusion_matrix(y_test,y_pred))
+print(classification_report(y_test,y_pred))
